@@ -26,7 +26,7 @@ For each game you want to add, you have to write a manifest file.
 
 Refer to sample.manifest for examples. Key names are case insensitive.
 
-After writing your manifest, you can do `python3 MyGame.smanifest`, it will add the steam shortcut and images to every steam account that exists.
+After writing your manifest, you can do `python3 shortcut-manager.py MyGame.smanifest`, it will add the steam shortcut and images to every steam account that exists.
 
 
 # Documentation
@@ -43,22 +43,11 @@ I simply modify shortcuts.vdf based on what I've seen in other entries generated
 
 As for the steam:// ID generation, see the comment used in the excerpt of Scott Rice's code in shortcuts.py in the GetURL() function.
 
-# Future Roadmap
-
-In no particular order:
-* Further document attributes I don't understand (time played, shortcut path) and what values are accepted/how they're interpreted.
-* Support users who don't have an existing shortcuts.vdf (should be simple to create a new one)
-* Test to make sure this works on Linux/Mac (or have other users confirm). I don't see why it wouldn't work, though.
-* Detect broken files or other malformed data to prevent making issues worse. This also includes the ability to recognize any new attributes Steam may have added so that I don't break the entire file by creating entries with missing attributes.
-* Further documentation on what acceptable values for attributes are. (i.e. can stuff be missing, etc.)
-* Friendlier "experience" - stop asking for things everyone leaves blank by default, like last played date. Accept having no tags. Automatically determine "starting path" from path to executable.
-* Ability to remove shortcuts (perhaps based on id or appname?)
-
 # License
 
 SEE LICENSE.MD
 
 # Acknowledgments
-
+* CorporalQuesadilla for the original Steam Shortcut Manager, of course. (Named libVDF here)
 * Scott Rice for ICE, or rather his work finding how steam:// IDs are generated.
 * PsychoTheHedgehog for also documenting how shortcuts.vdf is laid out. Unfortunately, their work was trashed some time ago and the Google cached version dissappeared sometime in July 2018. It turns out they had discovered essentially the same things I had, but at least it's reassuring to find someone else had documented almost the exact the same things. Their documentation was fairly old (missing some variables added in recent years) and I wasn't a fan of how it was explained anyways, but hey, credit to them for independently finding the same things first. Hopefully my documentation here will remain updated and accessible, as it seems to be the only documentation publicly available now.
