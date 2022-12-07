@@ -1,12 +1,33 @@
-# Steam Shortcut Manager
+# Steam Shortcut Manager++
 
-This is a cross-platform command-line tool to add non-Steam application shortcuts. You pass a set of options about the program you want to add (name, path, categories, etc.) and in return it'll appear the next time you launch Steam - just as if you had added/configured it from the official Steam GUI. Additionally, it will generate the appid to launch the game through steam through the command line. (e.g. steam://rungameid/###)
+This is a tool that adds non-steam shortcuts by reading from manifest files that contain information about the game. The manifest files contain the game name, executable, command line arguments, and any images.
 
-This is intended to be used in conjunction with a tool that automates the adding of shortcuts. But you can totally use it on your own, too!
+I created this application because there aren't any quick and easy ways of adding a huge batch of games to the steam deck at once. I don't want to manually add every single .exe game, it was already tedious enough to do it on my PC.
 
-Personally, I plan to use it to launch all my games through Steam for controller support and a unified library. That includes GOG:// or similar links, so that even uninstalled games from 3rd party libraries will work!
+Essentially, you should be able to place all the artwork inside the game folder, then write a manifest file. Or perhaps skip writing the manifest file entirely and just specify the game folder, or an appid.txt...
 
-Ideally, you could use another application (such as Playnite) to build up your GOG/Steam/Emulated/etc. libraries into one database, then write a basic script to pass all those into Steam using this application!
+# TODO
+
+- Ability to add games automatically without a manifest file, maybe by automatically searching for `steam_hero.png`, `steam_banner.png`, etc
+
+- Ability to set proton config.
+
+- Ability to set keyboard and controller bindings. Ideally like how the official steam manifests work.
+
+- Ability to remove games using the manifests.
+
+- Installation to /bin/games so you can double click a .smanifest to immediately add it to steam. Although this wouldn't work on the steam deck, so maybe the shebang has to be changed.
+
+- Fixing icons. This is not really a priority though, since the steam deck doesn't use them.
+
+# Getting Started
+
+For each game you want to add, you have to write a manifest file.
+
+Refer to sample.manifest for examples. Key names are case insensitive.
+
+After writing your manifest, you can do `python3 MyGame.smanifest`, it will add the steam shortcut and images to every steam account that exists.
+
 
 # Documentation
 
@@ -15,45 +36,6 @@ If you're just here because you're interested in how Steam shortcuts and steam:/
 If you're here for documentation on how this program works, continue reading.
 
 Please note that there are some differences in the arguments my program expects vs. how Steam actually stores shortcuts - the documentation below is simply for the "easy" input my program can be given in order to generate the funky input that Steam actually needs. This prevents the user from worrying about funky ASCII characters or quote encapsulation. It's much easier to type 0 than (insert series of invisible characters here).
-
-# Getting Started
-
-Make sure Steam is closed. Not sure if there's any harm keeping it open, but I do know Steam won't reflect changes made here until next time it's launched.
-
-Run the program (shortcuts.py) from the command line. Be sure to download both .py files and keep them in the same directory, though.
-
-# Example
-```
-python shortcuts.py "C:\Program Files (x86)\Steam\userdata\ID_HERE\config\shortcuts.vdf" "Super Video Game IV" "C:\SVG IV.exe" C:\ "C:\Path to\an\icon\someEXEorICO.exe" "" "-fullscreen heckno" 0 1 1 1 0 FPS Puzzle
-```
-will add a shortcut called "WoohooMyProgramWorks" to Steam. It launches "SVG IV.exe", which is located in C:\. It's custom icon is the one used for someEXEorICO.exe. The argument (launch option) "-fullscreen heckno" is passed to "SVG IV.exe" when launching the shortcut. It is not marked as Hidden. It uses any Steam Input-supported controller's Desktop Configuration (for launchers and stuff I think), allows the Steam Overlay, is in the VR Library, has never been played before, and is in the FPS and Puzzle categories.
-
-You need to fill out every argument in the following order. If any argument has spaces or other funky characters (such as the title in my example, which has multiple) you'll need to encapsulate the entire argument with double quotes. To be safe, you probably should do this no matter what.
-
-# Arguments
-Argument | Explanation
--------- | -----------
-Path to Shortcuts.vdf | Requires Your personal ID - steamID3 [U:1:THIS_PART_HERE_COPY_ME] from https://steamidfinder.com/ This is for the local path to your shortcuts.vdf file we're modifying, located in \Path\To\Steam\userdata\USERIDHERE\config\shortcuts.vdf.
-Name of program | Whatever you want to call it. This is how it appears in Steam.
-Path to program or URL | Direct path to executable file or URL. That means that steam:// or GOG:// links work.
-Path to start program | Basically the path to the folder the game is in. Take the path above and cut the executable file out. If it's a URL, I think you can just leave this blank.
-Path to icon | Optional place to source the icon. BTW, I'm not sure where the Grid/BigPicture image comes from.
-Shortcut path | No idea what this is. Just do "" (literally 'the empty string' - two double quotes in a row)
-Launch options | Anything to pass to the exe.
-Hidden? | Put a 1 here to make it only visible under "Hidden", anything else won't hide it. You need something though. 0 is fine.
-Allow Desktop Config? | Use controller's Desktop Configurations in this game. Put a 1 to enable it, anything else to disable. You need to put some argument here. 0 is fine.
-Allow Steam Overlay? | Put a 1 to enable it, anything else to disable. You need something though. 0 is fine.
-In VR library? | For the 'VR Library' Category. Put a 1 to enable it, anything else to disable. You need something though. 0 is fine.
-Last Play Time | Date last played. No idea how this works yet. For now, put 0 and I'll take care of it (defaulting to "Never Played".) Steam will update this once you actually start playing. I don't know why you'd want to fake it with anything else anyways.
-Categories | Any categories you want it to appear in. Categories are separated by spaces. If you want to use spaces in a category name, put it in double quotes. Everything from this point onward is a category, you can do as many as you like.
-
-# Prerequisites
-
-Just Python. I made this having 2.7 installed, but it's probably compatible with 3. I can port it if neccessary.
-
-Oh, and make sure your Steam\userdata\ID_HERE\config\shortcuts.vdf exists. Maybe just manually add one shortcut first before using this tool.
-
-If you don't know your ID, get it from here: steamID3 [U:1:THIS_PART_HERE_COPY_ME] from https://steamidfinder.com/
 
 # How it works
 
