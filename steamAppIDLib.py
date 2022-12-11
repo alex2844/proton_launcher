@@ -21,8 +21,9 @@ def get_grid_art_destinations(full_steam_user_dir:str, exe:str, appname:str):
 	shortcut = get_steam_shortcut_id(exe, appname)
 	bp_shortcut = (shortcut << 32) | 0x02000000
 	return {
-		'cover': grid / f"{shortcut}p.jpg",
+		'portrait': grid / f"{shortcut}p.jpg", #Also known as capsule
 		'hero':   grid / f"{shortcut}_hero.jpg",
 		'logo':   grid / f"{shortcut}_logo.png",
 		'banner': grid / f"{bp_shortcut}.png",
+		'banner2':grid / f"{shortcut}.png",
 	}

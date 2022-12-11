@@ -1,0 +1,12 @@
+[Desktop Entry]
+Type=Service
+Icon=smiley-shape
+X-KDE-ServiceTypes=KonqPopupMenu/Plugin
+MimeType=inode/directory;
+Actions=AddToSteam;
+Encoding=UTF-8
+
+[Desktop Action AddToSteam]
+Name=Add Game To Steam
+Icon=smiley-shape
+Exec=python3 ~/Documents/Steam-Shortcut-Manager/shortcut-manager.py "%f"

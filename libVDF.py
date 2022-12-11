@@ -118,6 +118,13 @@ def findLastEntryNumber(pathToShortcutsVDF)->int:
                     #print("Pos: "+str(i))
     return int(fileContents[startPosition:endPosition])
 
+def decompressVDF(pathToShortcutsVDF):
+	pass
+
+def listEntries(pathToShortcutsVDF:str,entryFilter:str):
+	return []
+
+#def removeEntry(pathToShortcutsVDF,
 
 def addEntry(pathToShortcutsVDF, inputTuple):
     # if path.getsize(pathToShortcutsVDF) < 35:

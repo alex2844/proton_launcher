@@ -4,30 +4,36 @@ This is a tool that adds non-steam shortcuts by reading from manifest files that
 
 I created this application because there aren't any quick and easy ways of adding a huge batch of games to the steam deck at once. I don't want to manually add every single .exe game, it was already tedious enough to do it on my PC.
 
-Essentially, you should be able to place all the artwork inside the game folder, then write a manifest file. Or perhaps skip writing the manifest file entirely and just specify the game folder, or an appid.txt...
+Essentially, you should be able to place all the artwork inside the game folder, then write a manifest file. Or perhaps skip writing the manifest file entirely and just specify the game folder, or an app id...
 
 # TODO
 
-- Ability to add games automatically without a manifest file, maybe by automatically searching for `steam_hero.png`, `steam_banner.png`, etc
-
-- Ability to set proton config.
+- Ability to set proton config in the manifest
 
 - Ability to set keyboard and controller bindings. Ideally like how the official steam manifests work.
 
 - Ability to remove games using the manifests.
 
-- Installation to /bin/games so you can double click a .smanifest to immediately add it to steam. Although this wouldn't work on the steam deck, so maybe the shebang has to be changed.
+- ~~Installation to /bin/games so you can double click a .smanifest to immediately add it to steam. Although this wouldn't work on the steam deck, so maybe the shebang has to be changed.~~ Changed my mind, instead you can right click the folder to add a game.
 
 - Fixing icons. This is not really a priority though, since the steam deck doesn't use them.
 
+- Some sort of non steam game manager that allows you to copy games to and from a USB HDD
+
 # Getting Started
 
-For each game you want to add, you have to write a manifest file.
+Simply do `python3 shortcut-manager.py /full/path/to/SomeFolderHere`. The shortcut manager will automatically locate the exe inside the folder, download artwork, and then add the game with all the needed artwork to Steam. (Tip: Dragging and dropping the folder into the terminal also works)
 
-Refer to sample.manifest for examples. Key names are case insensitive.
+If your game has an exe in a strange place (UE4 games do this) you will have to write a manifest. Refer to sample.manifest for examples. Key names are case insensitive.
 
-After writing your manifest, you can do `python3 shortcut-manager.py MyGame.smanifest`, it will add the steam shortcut and images to every steam account that exists.
+After writing your manifest, you can do `python3 shortcut-manager.py /full/path/to/MyGame.smanifest`, it will add the steam shortcut and images to every steam account that exists.
 
+# Steam Deck Installation
+`python3 -m ensurepip`, `python3 -m pip install requests`, then `install to steamdeck.sh`.
+
+This will add it to Dolphin's right click menu. I don't know how flatpak works, so this script just copies the required files to ~/Documents.
+
+Right click any folder containing a game -> Add To Steam.
 
 # Documentation
 
