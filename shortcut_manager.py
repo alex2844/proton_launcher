@@ -159,6 +159,8 @@ def find_game_exe(appBaseDir:str,manifest:dict)->str:
 	]
 
 	for d in commonExeDirs:
+		if not path.isdir(d):
+			continue
 		for x in os.listdir(d):
 			if path.isdir(x):
 				continue
@@ -168,11 +170,13 @@ def find_game_exe(appBaseDir:str,manifest:dict)->str:
 			#print(x)
 			if x.lower().endswith(".exe"):
 				manifest['proton']="true"
-				appFullPath=path.join(appBaseDir,x)
+				appFullPath=path.join(appBaseDir,d,x)
+				print("Located "+appFullPath)
 				return appFullPath
 			elif x.lower().endswith(".x86") or x.lower().endswith(".x86_64") or x.lower().endswith(".sh"):
 				manifest['proton']="false"
 				appFullPath=x
+				print("Located "+appFullPath)
 				return appFullPath
 	return appFullPath
 
@@ -368,7 +372,7 @@ if __name__=="__main__":
 		appBaseDir=path.abspath(arg)
 		foundManifest=False
 		for x in os.listdir(arg):
-			if x.endswith(".smanifest") and path.isfile(x):
+			if x.endswith(".smanifest") and path.isfile(path.join(arg,x)):
 				manifest=parseManifest(x)
 				appFullPath = path.join(appBaseDir,manifest['exec'])
 				foundManifest=True
@@ -431,6 +435,11 @@ if __name__=="__main__":
 		else:
 			print("Doesn't seem to be a steam game. Getting additional artwork from steamgrid API...")
 		steamGridAPIkey = os.environ['STEAMGRIDDB_API_KEY']
+		if not steamGridAPIkey:
+			skeyLoc = path.join(os.path.realpath(os.path.dirname(__file__)),"key.txt")
+			if path.isfile(skeyLoc):
+				with open(skeyLoc,'r') as f:
+					steamGridAPIkey=f.read().strip()
 		if steamGridAPIkey:
 			steamGridGameID,gameName=get_griddb_appid(steamGridAPIkey,steamAPPID,path.split(appBaseDir)[-1])
 			if steamGridGameID>0:
