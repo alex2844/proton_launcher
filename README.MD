@@ -22,9 +22,11 @@ Essentially, you should be able to place all the artwork inside the game folder,
 
 # Getting Started
 
-Simply do `python3 shortcut-manager.py /full/path/to/SomeFolderHere`. The shortcut manager will automatically locate the exe inside the folder, download artwork, and then add the game with all the needed artwork to Steam. (Tip: Dragging and dropping the folder into the terminal also works)
+Copy the downloaded folder to your Documents folder. If you would like the program to automatically download game images, obtain a steamgriddb key and paste it in key.txt in the folder.
 
-If your game has an exe in a strange place (UE4 games do this) you will have to write a manifest. Refer to sample.smanifest for examples. Key names are case insensitive.
+Simply do `python3 shortcut_manager.py /full/path/to/SomeFolderHere`. The shortcut manager will automatically locate the exe inside the folder, download artwork, and then add the game with all the needed artwork to Steam. (Tip: Dragging and dropping the folder into the terminal also works)
+
+If your game has an exe in a strange place (UE4 games do this) you will have to write a manifest. Refer to sample.smanifest for examples. Key names are case insensitive. manifest name doesn't matter as long as it ends in smanifest.
 
 After writing your manifest, you can do `python3 shortcut-manager.py /full/path/to/MyGame.smanifest`. Pointing to just the folder also works, it will search for any file ending in .smanifest inside the folder.
 
