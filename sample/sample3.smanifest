@@ -1,0 +1,10 @@
+#!/usr/games/nonsteam-shortcut
+
+Name=Bloodstained: Curse of the Moon
+Exec=exe/game.exe
+
+Proton=True
+ProtonTricks=d3dcompiler_47
+IsVR=False
+
+

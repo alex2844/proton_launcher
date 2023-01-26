@@ -16,7 +16,7 @@ Essentially, you should be able to place all the artwork inside the game folder,
 
 - ~~Installation to /bin/games so you can double click a .smanifest to immediately add it to steam. Although this wouldn't work on the steam deck, so maybe the shebang has to be changed.~~ Changed my mind, instead you can right click the folder to add a game.
 
-- Fixing icons. This is not really a priority though, since the steam deck doesn't use them.
+- Fixing icons. This is not really a priority though, since you only see them in the overlay menu.
 
 - Some sort of non steam game manager that allows you to copy games to and from a USB HDD
 
@@ -24,16 +24,43 @@ Essentially, you should be able to place all the artwork inside the game folder,
 
 Simply do `python3 shortcut-manager.py /full/path/to/SomeFolderHere`. The shortcut manager will automatically locate the exe inside the folder, download artwork, and then add the game with all the needed artwork to Steam. (Tip: Dragging and dropping the folder into the terminal also works)
 
-If your game has an exe in a strange place (UE4 games do this) you will have to write a manifest. Refer to sample.manifest for examples. Key names are case insensitive.
+If your game has an exe in a strange place (UE4 games do this) you will have to write a manifest. Refer to sample.smanifest for examples. Key names are case insensitive.
 
-After writing your manifest, you can do `python3 shortcut-manager.py /full/path/to/MyGame.smanifest`, it will add the steam shortcut and images to every steam account that exists.
+After writing your manifest, you can do `python3 shortcut-manager.py /full/path/to/MyGame.smanifest`. Pointing to just the folder also works, it will search for any file ending in .smanifest inside the folder.
 
 # Steam Deck Installation
+
+NOT FINISHED YET
+
 `python3 -m ensurepip`, `python3 -m pip install requests`, then `install to steamdeck.sh`.
 
 This will add it to Dolphin's right click menu. I don't know how flatpak works, so this script just copies the required files to ~/Documents.
 
 Right click any folder containing a game -> Add To Steam.
+
+# Save data backup/restore
+
+NOT FINISHED YET
+
+This requires writing a .smanifest, inserting a SaveDirectory key in the manifest, then inserting a Proton key in the manifest.
+
+## On Linux
+
+If proton is set to true, it will attempt to search within the game's proton prefix. Windows environment variables will also be resolved, since many games save to %AppData% or similar locations.
+
+If proton is set to false, it will be treated as a raw path and resolved using `os.path.expandvars()`.
+
+There are no sanity checks, so make sure you trust the smanifest if you didn't write it.
+
+## On Windows
+
+This feature currently does not support Windows, because I don't use Windows.
+
+~~The proton key is ignored and the path is resolved using `os.path.expandvars()`.~~
+
+## Usage
+
+Use `python3 shortcut-manager.py --backup-save` to copy the game's save files to a dir named `SSM_SAVE_BACKUP` within the game's install dir. Then use `python3 shortcut-manager.py --restore-save` to restore it. Note that if you are restoring it to a new computer you must run the game at least one time after adding the shortcut so Steam will generate the proton prefix.
 
 # Documentation
 

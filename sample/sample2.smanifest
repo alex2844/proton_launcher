@@ -1,0 +1,9 @@
+#!/usr/games/nonsteam-shortcut
+
+Name=Sonic Frontiers
+Exec=sonic.exe
+
+Proton=True
+IsVR=False
+
+SaveDirectory=%APPDATA%\Sega\SonicFrontiers\steam\

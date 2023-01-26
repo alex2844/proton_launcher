@@ -1,6 +1,7 @@
 # CC0, Public Domain
 from pathlib import Path
 import binascii
+#import zlib
 
 def get_steam_shortcut_id(exe, appname):
 	"""Get id for non-steam shortcut.
@@ -10,7 +11,6 @@ def get_steam_shortcut_id(exe, appname):
 	unique_id = ''.join([exe, appname])
 	id_int = binascii.crc32(str.encode(unique_id)) | 0x80000000
 	return id_int
-
 
 def get_grid_art_destinations(full_steam_user_dir:str, exe:str, appname:str):
 	"""Get filepaths for the grid images for the input shortcut.
@@ -27,3 +27,12 @@ def get_grid_art_destinations(full_steam_user_dir:str, exe:str, appname:str):
 		'banner': grid / f"{bp_shortcut}.png",
 		'banner2':grid / f"{shortcut}.png",
 	}
+
+if __name__=="__main__":
+	import sys
+	if len(sys.argv)>2:
+		print(sys.argv)
+		print(get_steam_shortcut_id('"'+sys.argv[1]+'"',sys.argv[2]))
+	else:
+		print("Usage: \"Path to game exe\" \"Game Name\"")
+		print("Example: \"/home/deck/Documents/Games/Blue Reflection/BLUE_REFLECTION.exe\" \"BLUE REFLECTION\"")

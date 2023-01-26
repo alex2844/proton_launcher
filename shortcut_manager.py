@@ -15,6 +15,18 @@ import urllib.parse
 import argparse
 #from typing_extensions import Union
 
+class bcolors:
+    HEADER = '\033[95m'
+    OKBLUE = '\033[94m'
+    OKCYAN = '\033[96m'
+    OKGREEN = '\033[92m'
+    WARNING = '\033[93m'
+    FAIL = '\033[91m'
+    ENDC = '\033[0m'
+    BOLD = '\033[1m'
+    UNDERLINE = '\033[4m'
+def printOK(s:str):
+	print(bcolors.OKGREEN+s+bcolors.ENDC)
 
 class SteamUser:
 	name:str
@@ -55,7 +67,7 @@ def GetSteamInstallation(steamDir:str="")->Tuple[str,str]:
 def GetSteamUsers(steamDir:str)->List[SteamUser]:
 	steamUsers:List[SteamUser] = []
 	for userDir in next(os.walk( os.path.join(steamDir,"userdata") ))[1]:
-		if userDir=="anonymous": #Anonymous account is used for steam CLI only
+		if userDir=="anonymous" or userDir=="0": #Anonymous account is used for steam CLI only
 			continue
 		configFile = os.path.join(steamDir,"userdata",userDir,"config","localconfig.vdf")
 		if not path.isfile(configFile):
@@ -79,6 +91,9 @@ def GetSteamUsers(steamDir:str)->List[SteamUser]:
 		steamUsers.append(user)
 		#user.name
 	return steamUsers
+
+def GetSteamProtonDir(steamDir:str,gameID:int)->str:
+	return os.path.join(steamDir,"steamapps","compatdata",str(gameID),"pfx")
 
 def isValidImage(fName:str):
 	for ext in ['.png','.jpg','.jpeg','.tga','.gif','.webp']:
@@ -119,6 +134,9 @@ def parseManifest(manifestLocation:str)->Dict[str,str]:
 		"portrait":"",
 		"logo":"",
 		"proton":"true",
+		"name":"",
+		"manifestDefinedName":True,
+		"griddb_search_name":"",
 		"args":""
 	}
 	with open(manifestLocation,'r') as f:
@@ -173,7 +191,7 @@ def find_game_exe(appBaseDir:str,manifest:dict)->str:
 				appFullPath=path.join(appBaseDir,d,x)
 				print("Located "+appFullPath)
 				return appFullPath
-			elif x.lower().endswith(".x86") or x.lower().endswith(".x86_64") or x.lower().endswith(".sh"):
+			elif x.lower().endswith(".x86") or x.lower().endswith(".x86_64") or x.lower().endswith(".sh") or x.endswith(".AppImage"):
 				manifest['proton']="false"
 				appFullPath=x
 				print("Located "+appFullPath)
@@ -189,10 +207,11 @@ def find_steam_appid(fullPathToExe:str)->int:
 	appid=0
 	for p in [
 		path.join(appLocation,"steam_appid.txt"), #normal games. Most steam games already have this.
-		path.join(appLocation,"settings","steam_appid.txt"),
+		path.join(appLocation,"steam_settings","steam_appid.txt"),
 		path.join(unityDataDir,"Plugins","steam_appid.txt"), #Unity games
-		path.join(unityDataDir,"Plugins","settings","steam_appid.txt"),
-		path.join(unityDataDir,"Plugins","x86_64","steam_appid.txt"),
+		path.join(unityDataDir,"Plugins","steam_settings","steam_appid.txt"),
+		path.join(unityDataDir,"Plugins","x86_64","steam_appid.txt"), #Unity 64-bit games
+		path.join(unityDataDir,"Plugins","x86_64","steam_settings","steam_appid.txt"),
 	]:
 		#print("Searching "+p)
 		if path.isfile(p):
@@ -243,17 +262,17 @@ def download_image_from_steam(appID:int,type_:Literal['portrait','capsule','head
 			print("Invalid type "+type_+" given for image!")
 			return bytes(0),False
 		if resp.ok:
-			return resp.content,True
+			return resp.content,True #type:ignore
 		else:
-			print("Attempted "+resp.url)
+			print("Attempted "+resp.url) #type:ignore
 			print(resp)
 	except requests.exceptions.RequestException as e:
 		print(e)
 	return bytes(0),False
 
-def get_griddb_appid(griddb_key:str,steamAppID:int=0,gameName:str="")->Tuple[int,str]:
-	if steamAppID>0:
-		resp=requests.get(f"https://www.steamgriddb.com/api/v2/games/steam/{steamAppID}",headers={
+def get_griddb_appid(griddb_key:str,steamAPPID:int=0,gameName:str="")->Tuple[int,str]:
+	if steamAPPID>0:
+		resp=requests.get(f"https://www.steamgriddb.com/api/v2/games/steam/{steamAPPID}",headers={
 			"Authorization":"Bearer "+griddb_key
 		})
 		if resp.ok:
@@ -345,6 +364,8 @@ if __name__=="__main__":
 	parser.add_argument('-v','--verbose',action="store_true",help="Enable verbose output for debugging.")
 	parser.add_argument('-n',"--dry-run",action="store_true",dest="dry_run",help="Don't add a shortcut to steam (still downloads images)")
 	parser.add_argument("--offline",action="store_true", help="Don't download missing artwork.")
+	parser.add_argument("--backup-save", action="store_true", dest="backup_save",  help="Backup save data from a steam proton directory to the installation folder. Requires a manifest file.")
+	parser.add_argument("--restore-save",action="store_true", dest="restore_save", help="Restore save data from the installation folder to the steam proton directory. Requires a manifest file.")
 	parser.add_argument("input",help="Game or folder name.")
 	#parser.add_argument
 	args = parser.parse_args()
@@ -360,22 +381,31 @@ if __name__=="__main__":
 		"portrait":"",
 		"logo":"",
 		"proton":"true",
+		"name":"",
+		"manifestDefinedName":True,
 		"args":""
 	}
 	if path.isfile(arg):
 		manifest=parseManifest(arg)
 		appBaseDir=path.abspath(path.dirname(arg))
-		appFullPath = path.join(appBaseDir,manifest['exec'])
+		if 'exec' in manifest:
+			appFullPath = path.join(appBaseDir,manifest['exec'])
+		else:
+			appFullPath=find_game_exe(appBaseDir,manifest)
+			if appFullPath=="":
+				print("Couldn't determine exe. Giving up.")
+				sys.exit(1)
 	elif path.isdir(arg):
 		print("No manifest given, just dir... Searching for manifest")
-		manifest['name']=arg.split("/")[-1]
+
 		appBaseDir=path.abspath(arg)
 		foundManifest=False
 		for x in os.listdir(arg):
 			if x.endswith(".smanifest") and path.isfile(path.join(arg,x)):
-				manifest=parseManifest(x)
-				appFullPath = path.join(appBaseDir,manifest['exec'])
-				foundManifest=True
+				manifest=parseManifest(path.abspath(path.join(arg,x)))
+				if 'exec' in manifest:
+					appFullPath = path.join(appBaseDir,manifest['exec'])
+					foundManifest=True
 				break
 		if foundManifest==False:
 			print("No manifest found, searching manually for files.")
@@ -384,7 +414,10 @@ if __name__=="__main__":
 			if appFullPath=="":
 				print("Couldn't determine exe. Giving up.")
 				sys.exit(1)
-
+		#TODO: parseManifest should just take an existing manifest class so it doesn't overwrite previous values.
+		if manifest['name']=="":
+			manifest['manifestDefinedName']=False
+			manifest['name']=arg.split("/")[-1]
 	else:
 		print("Either no path was given or there was an error reading manifest.")
 		sys.exit(1)
@@ -394,6 +427,58 @@ if __name__=="__main__":
 		print("Executable specified in manifest does not exist, cannot add shortcut")
 		sys.exit(1)
 
+
+	if args.backup_save:
+		if 'savedirectory' not in manifest:
+			print("No save directory defined in manifest or no manifest found, how do you expect to save anything?")
+			sys.exit(1)
+	
+		steamDir,err = GetSteamInstallation()
+		steamUsers = GetSteamUsers(steamDir)
+		if len(steamUsers) < 1:
+			print("There are no valid steam accounts.")
+			sys.exit(1)
+			
+		
+		
+		import platform
+		if platform.system()=="Windows":
+			print("Save data backup and restore does not support Windows.")
+			sys.exit(1)
+			
+		if manifest['proton']=="true":
+			#This was way too much effort when protontricks already does all the hard work, so I'm just going to use protontricks.
+
+			# protonDir=""
+			
+			# for user in steamUsers:
+			# 	print("Checking if proton dir registered in user "+user.SteamID32)
+			# 	shortcutsVDF = os.path.join(user.dir,"config","shortcuts.vdf")
+			# 	print("Checking shortcuts.vdf")
+			# 	for e in libVDF.listEntries(shortcutsVDF):
+			# 		if e['Exe']=='"'+appFullPath+'"':
+			# 			print("Found matching game in shortcuts")
+						
+			# 			#According to protontricks, multiple proton dirs can exist and the latest one needs to be checked. This is a problem.
+			# 			protonDirTmp=GetSteamProtonDir(steamDir,libVDF.int32_to_uint32(e['appid']))
+			# 			print("Testing if proton dir exists: "+protonDirTmp)
+			# 			if path.isdir(protonDirTmp):
+			# 				print("Proton dir found.")
+			# 				break
+			# #steamAPPID = steamAPPIDLib.get_steam_shortcut_id('"'+appFullPath+'"',manifest["name"])
+			# #To get the steam App ID, we have to check shortcuts.vdf, because steam likes to assign its own app IDs instead of using the calculated ones for some reason...
+			# libVDF.listEntries(
+			
+			
+			import subprocess
+			#wineRoot = GetSteamProtonDir(steamDir)
+			#print(wineRoot)
+			#sys.exit(0)
+			#protontricks --list | grep NON-STEAM
+			#protontricks --command "wine cmd /c whoami" 314180
+			proc = subprocess.run(['protontricks','--list'])
+			print(proc.stdout)
+		sys.exit(0)
 
 	#Search for images and download more images here
 	for x in os.listdir(appBaseDir):
@@ -434,16 +519,23 @@ if __name__=="__main__":
 						manifest[k]=fullImgPath
 		else:
 			print("Doesn't seem to be a steam game. Getting additional artwork from steamgrid API...")
-		steamGridAPIkey = os.environ['STEAMGRIDDB_API_KEY']
-		if not steamGridAPIkey:
+		steamGridAPIkey = ""
+		if "STEAMGRIDDB_API_KEY" in os.environ:
+			steamGridAPIkey=os.environ['STEAMGRIDDB_API_KEY']
+		else:
 			skeyLoc = path.join(os.path.realpath(os.path.dirname(__file__)),"key.txt")
 			if path.isfile(skeyLoc):
 				with open(skeyLoc,'r') as f:
 					steamGridAPIkey=f.read().strip()
+
+		assert manifest['name']!="","game name was blank somehow, fix your code."
 		if steamGridAPIkey:
-			steamGridGameID,gameName=get_griddb_appid(steamGridAPIkey,steamAPPID,path.split(appBaseDir)[-1])
+			steamGridGameID,gameName=get_griddb_appid(steamGridAPIkey,steamAPPID,manifest['name'])
 			if steamGridGameID>0:
-				manifest['name']=gameName
+				if not manifest['manifestDefinedName']:
+					manifest['name']=gameName
+				else:
+					print("Manifest had Name= field, not overwriting with steamgrid obtained name "+gameName)
 				for k in ["icon","logo","hero","portrait","banner"]:
 					if manifest[k]=="":
 						print("Grabbing missing "+k+" artwork...")
@@ -469,7 +561,11 @@ if __name__=="__main__":
 	appIcon=resolveFullImagePath(appBaseDir,manifest['icon'])
 
 	if args.dry_run:
+		sid = steamAppIDLib.get_steam_shortcut_id('"'+appFullPath+'"',manifest["name"])
+		#print(sid)
 		print("Dry run specified, exiting.")
+		print("Calc image names based on "+'"'+appFullPath+'",'+manifest["name"])
+		print("Calculated steam shortcut ID (not adding): "+str(sid))
 		sys.exit(0)
 
 	if manifest['proton'].lower()=="false":
@@ -500,7 +596,7 @@ if __name__=="__main__":
 		)
 		libVDF.addEntry(shortcutsVDF,inputTuple)
 
-		print("Added "+manifest['name']+" to steam shortcuts.")
+		printOK("Added "+manifest['name']+" to steam shortcuts.")
 		print("Calc image names based on "+'"'+appFullPath+'",'+manifest["name"])
 		destinations = steamAppIDLib.get_grid_art_destinations(user.dir,'"'+appFullPath+'"',manifest["name"])
 		print(destinations)
@@ -511,7 +607,7 @@ if __name__=="__main__":
 					shutil.copyfile(bannerPath,destinations[imgType],follow_symlinks=True)
 					if imgType=="banner":
 						shutil.copyfile(bannerPath,destinations['banner2'],follow_symlinks=True)
-					print("Copied "+imgType+": "+bannerPath+" -> "+str(destinations[imgType]))
+					printOK("Copied "+imgType+": "+bannerPath+" -> "+str(destinations[imgType]))
 
 # Copyright (c) 2022 Amaryllis Works
 

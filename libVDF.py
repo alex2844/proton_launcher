@@ -48,6 +48,11 @@
 import sys
 from typing import Union, Tuple, List, Dict
 from os import path
+import ctypes
+
+
+def int32_to_uint32(i:int)->int:
+	return ctypes.c_uint32(i).value
 
 
 # def findLastEntryNumber(pathToShortcutsVDF)->int:
@@ -121,7 +126,13 @@ def findLastEntryNumber(pathToShortcutsVDF)->int:
 def decompressVDF(pathToShortcutsVDF):
 	pass
 
-def listEntries(pathToShortcutsVDF:str,entryFilter:str):
+def listEntries(pathToShortcutsVDF:str,entryFilter:str=""):
+	import vdf
+	with open(pathToShortcutsVDF,'rb') as f:
+		d = vdf.binary_loads(f.read())
+		return d['shortcuts'].values()
+		#for entry in d['shortcuts'].values():
+			
 	return []
 
 #def removeEntry(pathToShortcutsVDF,
