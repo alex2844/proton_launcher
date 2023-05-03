@@ -49,6 +49,7 @@ import sys
 from typing import Union, Tuple, List, Dict
 from os import path
 import ctypes
+from steamAppIDLib import get_steam_shortcut_id
 
 
 def int32_to_uint32(i:int)->int:
@@ -154,6 +155,7 @@ def createEntry(inputTuple)->bytes:
     # Put together all the variables and delimiters
 
     var_entryID         = inputTuple[0]
+    var_appid           = get_steam_shortcut_id(inputTuple[2],inputTuple[1])
     var_appName         = inputTuple[1]
     var_unquotedPath    = inputTuple[2]
     var_startDir        = inputTuple[3]
@@ -179,6 +181,10 @@ def createEntry(inputTuple)->bytes:
 
     # Key                # Data Type  # Internal Name       # Delimiter     # Input             # Delimiter
     full_entryID        =                                      '\x00'  +  var_entryID        +  '\x00'
+
+    #Because it's bytes, not string... Too lazy to fix the other code
+    full_appid          = b'\x02'  +  b'appid'              +  b'\x00' +  var_appid.to_bytes(4,'little')
+
     full_appName        =  '\x01'  +  'appname'             +  '\x00'  +  var_appName        +  '\x00'
     full_quotedPath     =  '\x01'  +  'exe'                 +  '\x00'  +  var_unquotedPath   +  '\x00'
     full_startDir       =  '\x01'  +  'StartDir'            +  '\x00'  +  var_startDir       +  '\x00'
@@ -192,8 +198,9 @@ def createEntry(inputTuple)->bytes:
     full_lastPlayTime   =  '\x02'  +  'LastPlayTime'        +  '\x00'  +  var_lastPlayTime
     full_tags           =  '\x00'  +  'tags'                +  '\x00'  +  var_tags           +  '\x08\x08'
 
-    newEntry = full_entryID + full_appName + full_quotedPath + full_startDir + full_iconPath + full_shortcutPath + full_launchOptions + full_isHidden + full_allowDeskConf + full_allowOverlay + full_openVR + full_tags
-    return newEntry.encode('utf-8')
+    newEntry:bytes = full_entryID.encode('utf-8') + full_appid
+    rest = full_appName + full_quotedPath + full_startDir + full_iconPath + full_shortcutPath + full_launchOptions + full_isHidden + full_allowDeskConf + full_allowOverlay + full_openVR + full_tags
+    return newEntry + rest.encode('utf-8')
     pass
 
 def inputPreperation(args, lastEntryInfo):
@@ -257,8 +264,10 @@ def namedInputPreparation(lastEntryInfo:int=0,
     var_appName         =       appName
     var_unquotedPath    = '"' + target + '"'
     var_startDir        = '"' + startDir + '"'
-    var_iconPath        = '"' + iconPath + '"'
-    var_shortcutPath    = '"' + shortcutPath + '"' # quoted? what is this?
+    if iconPath:
+        iconPath        = '"' + iconPath + '"'
+    if shortcutPath:
+        shortcutPath    = '"' + shortcutPath + '"' # quoted? what is this?
     var_launchOptions   =       launchArgs
 
     # Boolean checks
@@ -289,7 +298,7 @@ def namedInputPreparation(lastEntryInfo:int=0,
     for i,tag in enumerate(categories):
         var_tags = var_tags + '\x01' + str(i) + '\x00' + tag + '\x00'
 
-    return (var_entryID, var_appName, var_unquotedPath, var_startDir, var_iconPath, var_shortcutPath, var_launchOptions, var_isHidden, var_allowDeskConf, var_allowOverlay, var_openVR, var_lastPlayTime, var_tags)
+    return (var_entryID, var_appName, var_unquotedPath, var_startDir, iconPath, shortcutPath, var_launchOptions, var_isHidden, var_allowDeskConf, var_allowOverlay, var_openVR, var_lastPlayTime, var_tags)
 
 
 if __name__=="__main__":

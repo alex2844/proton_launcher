@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python3.10
 from typing import Union, Tuple, List, Dict
 from typing_extensions import Literal
 import os
@@ -125,28 +125,100 @@ def resolveFullImagePath(basePath,imgPath)->str:
 
 #def AddCover_WithAppID
 
-def parseManifest(manifestLocation:str)->Dict[str,str]:
-	#TODO: This should really be a class
-	manifest:Dict[str,str] = {
+class SManifest:
+
+	images:Dict[str,str]={
 		"icon":"",
 		"banner":"",
 		"hero":"",
 		"portrait":"",
-		"logo":"",
-		"proton":"true",
-		"name":"",
-		"manifestDefinedName":True,
-		"griddb_search_name":"",
-		"args":""
+		"logo":""
 	}
-	with open(manifestLocation,'r') as f:
-		manifestFile = f.read()
-		for l in manifestFile.splitlines():
-			if not l or l.startswith("#"):
-				continue
-			k,v = l.split("=",1)
-			manifest[k.lower()]=v
-	return manifest
+	#icon:str = ""
+	#banner:str = ""
+	#hero:str = ""
+	#portrait:str = ""
+	#logo:str = ""
+
+
+	uses_proton:bool=True
+	name:str = ""
+	manifest_defined_name:bool=True
+	griddb_search_name:str = ""
+	exec:str=""
+	launch_args:str = ""
+	categories:List[str] = []
+	save_directory:str=""
+
+	def __init__(self):
+		# self.icon=""
+		# self.banner=""
+		# self.hero=""
+		# self.portrait=""
+		# self.logo=""
+		# self
+		pass
+
+	def parseManifest(self,manifestLocation:str):
+		if path.exists(manifestLocation):
+			with open(manifestLocation,'r') as f:
+				manifestFile = f.read()
+				for l in manifestFile.splitlines():
+					if not l or l.startswith("#"):
+						continue
+					k,v = l.split("=",1)
+					match k.lower():
+						case "icon" | "banner" | "hero" | "portrait" | "logo":
+							self.images[k]=v
+						# case "banner":
+						# 	self.banner=v
+						# case "hero":
+						# 	self.hero=v
+						# case "portrait":
+						# 	self.portrait=v
+						# case "logo":
+						# 	self.logo=v
+						case "proton":
+							self.uses_proton=(v=="true")
+						case "name":
+							self.name=v
+							self.manifest_defined_name=True
+						case "exec":
+							self.exec=v
+						case "griddb_search_name":
+							self.griddb_search_name=v
+						case "args":
+							self.launch_args=v
+						case "categories":
+							for c in v.split(","):
+								self.categories.append(c.strip())
+						case "saveDirectory":
+							self.save_directory=v
+
+
+# def parseManifest(manifestLocation:str)->Dict[str,str]:
+# 	#TODO: This should really be a class
+# 	manifest:Dict[str,str] = {
+# 		"icon":"",
+# 		"banner":"",
+# 		"hero":"",
+# 		"portrait":"",
+# 		"logo":"",
+# 		"proton":"true",
+# 		"name":"",
+# 		"manifestDefinedName":True,
+# 		"griddb_search_name":"",
+# 		"args":"",
+# 		"categories":[]
+# 	}
+# 	with open(manifestLocation,'r') as f:
+# 		manifestFile = f.read()
+# 		for l in manifestFile.splitlines():
+# 			if not l or l.startswith("#"):
+# 				continue
+# 			k,v = l.split("=",1)
+# 			manifest[k.lower()]=v
+# 	return manifest
 
 def isBlackList(n:str)->bool:
 	blackListExeNames = [
@@ -157,6 +229,8 @@ def isBlackList(n:str)->bool:
 		"vcredist",
 		"7z", "7za",
 		"ManiaMod",
+		"custom", #Touhou games
+		"config",
 		"jsrsetup" #Literally just Jet Set Radio. Maybe just write a manifest for this one
 		]
 	nn = n.lower()
@@ -165,7 +239,7 @@ def isBlackList(n:str)->bool:
 			return True
 	return False
 
-def find_game_exe(appBaseDir:str,manifest:dict)->str:
+def find_game_exe(appBaseDir:str,manifest:SManifest)->str:
 
 	appFullPath=""
 	commonExeDirs=[
@@ -187,12 +261,12 @@ def find_game_exe(appBaseDir:str,manifest:dict)->str:
 				continue
 			#print(x)
 			if x.lower().endswith(".exe"):
-				manifest['proton']="true"
+				manifest.uses_proton=True
 				appFullPath=path.join(appBaseDir,d,x)
 				print("Located "+appFullPath)
 				return appFullPath
 			elif x.lower().endswith(".x86") or x.lower().endswith(".x86_64") or x.lower().endswith(".sh") or x.endswith(".AppImage"):
-				manifest['proton']="false"
+				manifest.uses_proton=False
 				appFullPath=x
 				print("Located "+appFullPath)
 				return appFullPath
@@ -374,22 +448,12 @@ if __name__=="__main__":
 	appBaseDir=""
 	appStartDir=""
 	appFullPath=""
-	manifest:Dict[str,str] = {
-		"icon":"",
-		"banner":"",
-		"hero":"",
-		"portrait":"",
-		"logo":"",
-		"proton":"true",
-		"name":"",
-		"manifestDefinedName":True,
-		"args":""
-	}
+	manifest:SManifest = SManifest()
 	if path.isfile(arg):
-		manifest=parseManifest(arg)
+		manifest.parseManifest(arg)
 		appBaseDir=path.abspath(path.dirname(arg))
-		if 'exec' in manifest:
-			appFullPath = path.join(appBaseDir,manifest['exec'])
+		if manifest.exec:
+			appFullPath = path.join(appBaseDir,manifest.exec)
 		else:
 			appFullPath=find_game_exe(appBaseDir,manifest)
 			if appFullPath=="":
@@ -402,9 +466,9 @@ if __name__=="__main__":
 		foundManifest=False
 		for x in os.listdir(arg):
 			if x.endswith(".smanifest") and path.isfile(path.join(arg,x)):
-				manifest=parseManifest(path.abspath(path.join(arg,x)))
-				if 'exec' in manifest:
-					appFullPath = path.join(appBaseDir,manifest['exec'])
+				manifest.parseManifest(path.abspath(path.join(arg,x)))
+				if manifest.exec:
+					appFullPath = path.join(appBaseDir,manifest.exec)
 					foundManifest=True
 				break
 		if foundManifest==False:
@@ -414,10 +478,9 @@ if __name__=="__main__":
 			if appFullPath=="":
 				print("Couldn't determine exe. Giving up.")
 				sys.exit(1)
-		#TODO: parseManifest should just take an existing manifest class so it doesn't overwrite previous values.
-		if manifest['name']=="":
-			manifest['manifestDefinedName']=False
-			manifest['name']=arg.split("/")[-1]
+		if not manifest.name:
+			manifest.manifest_defined_name=False
+			manifest.name=arg.split("/")[-1]
 	else:
 		print("Either no path was given or there was an error reading manifest.")
 		sys.exit(1)
@@ -429,7 +492,7 @@ if __name__=="__main__":
 
 
 	if args.backup_save:
-		if 'savedirectory' not in manifest:
+		if not manifest.save_directory:
 			print("No save directory defined in manifest or no manifest found, how do you expect to save anything?")
 			sys.exit(1)
 	
@@ -446,7 +509,7 @@ if __name__=="__main__":
 			print("Save data backup and restore does not support Windows.")
 			sys.exit(1)
 			
-		if manifest['proton']=="true":
+		if manifest.uses_proton:
 			#This was way too much effort when protontricks already does all the hard work, so I'm just going to use protontricks.
 
 			# protonDir=""
@@ -465,7 +528,7 @@ if __name__=="__main__":
 			# 			if path.isdir(protonDirTmp):
 			# 				print("Proton dir found.")
 			# 				break
-			# #steamAPPID = steamAPPIDLib.get_steam_shortcut_id('"'+appFullPath+'"',manifest["name"])
+			# #steamAPPID = steamAPPIDLib.get_steam_shortcut_id('"'+appFullPath+'"',manifest.name)
 			# #To get the steam App ID, we have to check shortcuts.vdf, because steam likes to assign its own app IDs instead of using the calculated ones for some reason...
 			# libVDF.listEntries(
 			
@@ -496,7 +559,7 @@ if __name__=="__main__":
 				for f in pairings[p]:
 					if x.lower().startswith(f) or x.lower().startswith("steam_"+f) or x.lower().startswith("steam"+f):
 						print("Found "+x+" as "+p)
-						manifest[p]=x
+						manifest.images[p]=x
 						break
 	if args.offline:
 		print("Offline mode specified, not downloading any missing artwork.")
@@ -508,7 +571,7 @@ if __name__=="__main__":
 			#STEAM_CDN_URL = "https://steamcdn-a.akamaihd.net/steam/apps/%v/"
 
 			for k in ['banner','portrait','hero','logo']:
-				if manifest[k]=="":
+				if not manifest.images[k]:
 					img,ok = download_image_from_steam(steamAPPID,k) #type:ignore
 					if ok:
 						ext = ".jpg" if img[6]==74 else ".png" #ord("J") -> 74
@@ -516,7 +579,7 @@ if __name__=="__main__":
 						with open(fullImgPath,'wb') as f:
 							f.write(img)
 							print("wrote "+fullImgPath)
-						manifest[k]=fullImgPath
+						manifest.images[k]=fullImgPath
 		else:
 			print("Doesn't seem to be a steam game. Getting additional artwork from steamgrid API...")
 		steamGridAPIkey = ""
@@ -528,16 +591,16 @@ if __name__=="__main__":
 				with open(skeyLoc,'r') as f:
 					steamGridAPIkey=f.read().strip()
 
-		assert manifest['name']!="","game name was blank somehow, fix your code."
+		assert manifest.name!="","game name was blank somehow, fix your code."
 		if steamGridAPIkey:
-			steamGridGameID,gameName=get_griddb_appid(steamGridAPIkey,steamAPPID,manifest['name'])
+			steamGridGameID,gameName=get_griddb_appid(steamGridAPIkey,steamAPPID,manifest.name)
 			if steamGridGameID>0:
-				if not manifest['manifestDefinedName']:
-					manifest['name']=gameName
+				if not manifest.manifest_defined_name:
+					manifest.name=gameName
 				else:
 					print("Manifest had Name= field, not overwriting with steamgrid obtained name "+gameName)
 				for k in ["icon","logo","hero","portrait","banner"]:
-					if manifest[k]=="":
+					if not manifest.images[k]:
 						print("Grabbing missing "+k+" artwork...")
 						img,url = download_image_from_steamgriddb(steamGridAPIkey,steamGridGameID,k)
 						if len(img) > 5:
@@ -546,7 +609,8 @@ if __name__=="__main__":
 							with open(fullImgPath,'wb') as f:
 								f.write(img)
 								print("wrote "+fullImgPath)
-							manifest[k]=imgFileName
+							manifest.images[k]=imgFileName
+							#setattr(manifest,k,imgFileName)
 
 	appStartDir = path.abspath(path.dirname(appFullPath))
 	print("BASE DIR:   "+appBaseDir)
@@ -558,17 +622,17 @@ if __name__=="__main__":
 
 
 
-	appIcon=resolveFullImagePath(appBaseDir,manifest['icon'])
+	appIcon=resolveFullImagePath(appBaseDir,manifest.images['icon'])
 
 	if args.dry_run:
-		sid = steamAppIDLib.get_steam_shortcut_id('"'+appFullPath+'"',manifest["name"])
+		sid = steamAppIDLib.get_steam_shortcut_id('"'+appFullPath+'"',manifest.name)
 		#print(sid)
 		print("Dry run specified, exiting.")
-		print("Calc image names based on "+'"'+appFullPath+'",'+manifest["name"])
+		print("Calc image names based on "+'"'+appFullPath+'",'+manifest.name)
 		print("Calculated steam shortcut ID (not adding): "+str(sid))
 		sys.exit(0)
 
-	if manifest['proton'].lower()=="false":
+	if manifest.uses_proton==False:
 		#chmod +x if native linux app, since some crappy file transfer programs will not transfer execute bit
 		os.chmod(appFullPath,0o755)
 		print("Chmod +x to native linux game...")
@@ -588,21 +652,22 @@ if __name__=="__main__":
 		print("Checking shortcuts.vdf")
 		lastEntryInfo = libVDF.findLastEntryNumber(shortcutsVDF)
 		inputTuple = libVDF.namedInputPreparation(lastEntryInfo,
-			appName=manifest['name'],
+			appName=manifest.name,
 			target=appFullPath,
 			startDir=appStartDir,
-			launchArgs=manifest['args'],
-			iconPath=appIcon
+			launchArgs=manifest.launch_args,
+			iconPath=appIcon,
+			categories=manifest.categories
 		)
 		libVDF.addEntry(shortcutsVDF,inputTuple)
 
-		printOK("Added "+manifest['name']+" to steam shortcuts.")
-		print("Calc image names based on "+'"'+appFullPath+'",'+manifest["name"])
-		destinations = steamAppIDLib.get_grid_art_destinations(user.dir,'"'+appFullPath+'"',manifest["name"])
+		printOK("Added "+manifest.name+" to steam shortcuts.")
+		print("Calc image names based on "+'"'+appFullPath+'",'+manifest.name)
+		destinations = steamAppIDLib.get_grid_art_destinations(user.dir,'"'+appFullPath+'"',manifest.name)
 		print(destinations)
 		for imgType in ['portrait','hero','logo','banner']: #Icon is skipped since you can just specify it in the vdf for whatever reason
-			if imgType in manifest and manifest[imgType]:
-				bannerPath = resolveFullImagePath(appBaseDir,manifest[imgType])
+			if manifest.images[imgType]:
+				bannerPath = resolveFullImagePath(appBaseDir,manifest.images[imgType])
 				if bannerPath:
 					shutil.copyfile(bannerPath,destinations[imgType],follow_symlinks=True)
 					if imgType=="banner":

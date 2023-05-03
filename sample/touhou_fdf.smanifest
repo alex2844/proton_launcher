@@ -1,0 +1,18 @@
+#This game is Proton's worst enemy.
+# Small note - The controller support for anything other than the steam deck is broken.
+# This is mostly the game's fault, the controller support has never worked properly and when you obtain the game on steam it
+# downloads a config that makes the controller use a keyboard (steam input will hide the controller on windows but not linux).
+
+# Unfortunately, the game's input is SO BROKEN that just having a controller plugged in makes it unplayable because it always presses Up+Left.
+# This doesn't affect the steam deck since it turns into a keyboard, but any other controller will be completely broken.
+# There's no way to fix this in Proton yet, but you can patch the exe using DnSpyEx and making GetPadState return BUTTONS.None or something
+
+Name=TouHou Makuka Sai ~ Fantastic Danmaku Festival
+Exec=THMHJ.exe
+
+Proton=True
+ProtonVersion=
+ProtonTricks=gdiplus d3dx9
+
+#Adds the game to the VR library, shown when in SteamVR.
+IsVR=False

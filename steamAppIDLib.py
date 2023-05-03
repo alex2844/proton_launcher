@@ -1,7 +1,11 @@
+#!/usr/bin/env python3
 # CC0, Public Domain
 from pathlib import Path
 import binascii
 #import zlib
+
+def get_steam_shortcut_id_raw(s:str)->int:
+	return binascii.crc32(str.encode(s)) | 0x80000000
 
 def get_steam_shortcut_id(exe, appname):
 	"""Get id for non-steam shortcut.
@@ -31,8 +35,15 @@ def get_grid_art_destinations(full_steam_user_dir:str, exe:str, appname:str):
 if __name__=="__main__":
 	import sys
 	if len(sys.argv)>2:
-		print(sys.argv)
-		print(get_steam_shortcut_id('"'+sys.argv[1]+'"',sys.argv[2]))
+		print(f'\033[93mIf your steam shortcut is quoted, you have to double quote it in the launch arguments for {sys.argv[0]}!\033[0m')
+		#print(sys.argv)
+		print(f"AppExe:  {sys.argv[1]}")
+		print(f"AppName: {sys.argv[2]}")
+		shortcut = get_steam_shortcut_id(sys.argv[1],sys.argv[2])
+		legacy =(shortcut << 32) | 0x02000000
+		print(f"Full:   {shortcut}")
+		print(f"Legacy: {legacy}")
+		#print(get_grid_art_destinations("/tmp",'"'+sys.argv[1]+'"',sys.argv[2]))
 	else:
 		print("Usage: \"Path to game exe\" \"Game Name\"")
 		print("Example: \"/home/deck/Documents/Games/Blue Reflection/BLUE_REFLECTION.exe\" \"BLUE REFLECTION\"")
