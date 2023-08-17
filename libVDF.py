@@ -49,8 +49,12 @@ import sys
 from typing import Union, Tuple, List, Dict
 from os import path
 import ctypes
-from steamAppIDLib import get_steam_shortcut_id
+import binascii
 
+def get_steam_shortcut_id(exe, appname):
+	unique_id = ''.join([exe, appname])
+	id_int = binascii.crc32(str.encode(unique_id)) | 0x80000000
+	return id_int
 
 def int32_to_uint32(i:int)->int:
 	return ctypes.c_uint32(i).value
@@ -111,7 +115,7 @@ def findLastEntryNumber(pathToShortcutsVDF)->int:
                     #print(fileContents[startPosition:endPosition])
                     break
                 else:
-                    print(fileContents[i:endPosition])
+                    #print(fileContents[i:endPosition])
                     if i < endPosition-5:
                         print("Failed to get entryNum.")
 #                        sys.exit(-1)
@@ -138,24 +142,26 @@ def listEntries(pathToShortcutsVDF:str,entryFilter:str=""):
 
 #def removeEntry(pathToShortcutsVDF,
 
-def addEntry(pathToShortcutsVDF, inputTuple):
+def addEntry(pathToShortcutsVDF, inputTuple)->str:
     # if path.getsize(pathToShortcutsVDF) < 35:
     #     print("shortcuts.vdf appears to be empty. Need at least 1 shortcut to add more.")
     #     return
     # Entries are added before the last two characters of the file
+    appid = get_steam_shortcut_id(inputTuple[2],inputTuple[1])
     f = open(str(pathToShortcutsVDF), 'rb+')
     fileContents = f.read()
     f.seek(len(fileContents) - 2)
     endFileContents = f.read()
     f.seek(len(fileContents) - 2)
-    f.write(createEntry(inputTuple) + endFileContents)
+    f.write(createEntry(appid, inputTuple) + endFileContents)
     f.close()
+    return appid
 
-def createEntry(inputTuple)->bytes:
+def createEntry(appid, inputTuple)->bytes:
     # Put together all the variables and delimiters
 
+    var_appid           = appid
     var_entryID         = inputTuple[0]
-    var_appid           = get_steam_shortcut_id(inputTuple[2],inputTuple[1])
     var_appName         = inputTuple[1]
     var_unquotedPath    = inputTuple[2]
     var_startDir        = inputTuple[3]
@@ -207,13 +213,13 @@ def inputPreperation(args, lastEntryInfo):
     # Get all the variables cleaned up
 
     # This is the newest entry, one more than the last one.
-    var_entryID = str(int(lastEntryInfo[0])+1)
+    var_entryID = str(int(lastEntryInfo)+1)
 
     # Strings
     var_appName         =       args[2]
     var_unquotedPath    = '"' + args[3] + '"'
     var_startDir        = '"' + args[4] + '"'
-    var_iconPath        = '"' + args[5] + '"'
+    var_iconPath        = args[5]
     var_shortcutPath    = '"' + args[6] + '"' # quoted? what is this?
     var_launchOptions   =       args[7]
 
@@ -306,6 +312,10 @@ if __name__=="__main__":
     # fileExistenceCheck() # check if file exists. NOT IMPLEMENTED YET.
     lastEntryInfo = findLastEntryNumber(pathToShortcutsVDF)
     inputTuple = inputPreperation(sys.argv, lastEntryInfo)
-    addEntry(pathToShortcutsVDF, inputTuple)
+    appid = get_steam_shortcut_id(inputTuple[2],inputTuple[1])
+    '''
+    appid = addEntry(pathToShortcutsVDF, inputTuple)
+    '''
+    print(f"AppId: {appid}")
 
 #def addFromDict(d:dict):
