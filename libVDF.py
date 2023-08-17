@@ -312,10 +312,8 @@ if __name__=="__main__":
     # fileExistenceCheck() # check if file exists. NOT IMPLEMENTED YET.
     lastEntryInfo = findLastEntryNumber(pathToShortcutsVDF)
     inputTuple = inputPreperation(sys.argv, lastEntryInfo)
-    appid = get_steam_shortcut_id(inputTuple[2],inputTuple[1])
-    '''
+    # appid = get_steam_shortcut_id(inputTuple[2],inputTuple[1])
     appid = addEntry(pathToShortcutsVDF, inputTuple)
-    '''
     print(f"AppId: {appid}")
 
 #def addFromDict(d:dict):
