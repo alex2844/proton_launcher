@@ -40,6 +40,7 @@ if [ "$1" == "--help" ] || [ "$1" == "-h" ]; then
 	echo -e "--tricks\t\t\tRun winetricks with the specified arguments"
 	echo -e "\t\t\t\t(for example, ./start.sh --tricks vcrun2015)"
 	echo -e "--debug\t\t\t\tShow more information when running Wine"
+	echo -e "--init\t\t\t\tInit"
 	echo -e "--steam\t\t\t\tAdd shortcuts to steam"
 	echo -e "--shortcuts\t\t\tAdd shortcuts to launch the script on"
 	echo -e "\t\t\t\tthe desktop and the applications menu"
@@ -60,6 +61,38 @@ export script="$(readlink -f "${BASH_SOURCE[0]}")"
 export scriptdir="$(dirname "$script")"
 
 cd "${scriptdir}" || exit 1
+
+if [ "$1" == "--init" ]; then
+	GAME=$(basename "$scriptdir")
+	content=$(wget -qO- "https://steamcommunity.com/actions/SearchApps/${GAME}")
+	if [ -n "${content}" ] && [ "${content}" != "[]" ] ; then
+		mkdir -p game_info
+		content=$(printf "%s" "$content" | python -c 'import sys, json; steam = json.load(sys.stdin)[0]; print(steam["appid"]); print(steam["name"])')
+		steam_appid=$(echo "${content}" | head -n 1)
+		GAME=$(echo "${content}" | tail -n 1)
+		echo "${steam_appid}" > game_info/steam_appid.txt
+	fi
+	if [ ! -f "game_info/game_info.txt" ]; then
+		EXE=$(find . -type f -name "*exe" -print -quit)
+		if [ -n "${EXE}" ]; then
+			if [ ! -d "game_info/data" ]; then
+				mkdir -p game_info/data
+				find . -mindepth 1 -maxdepth 1 -not -name "$(basename "${script}")" -not -name "game_info" -exec mv -t "game_info/data/" {} +
+			fi
+			ADDITIONAL_PATH=$(dirname "$EXE" | cut -c3-)
+			EXE=$(basename "$EXE")
+			cat <<EOF > game_info/game_info.txt
+${GAME}
+
+${EXE}
+
+${ADDITIONAL_PATH}
+${GAME}
+EOF
+		fi
+	fi
+	exit
+fi
 
 ## Set path to Wine binaries
 
