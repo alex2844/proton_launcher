@@ -693,7 +693,12 @@ if [ "$1" = "--steam" ]; then
 		echo "shortcuts.vdf not found!"
 		exit 1
 	fi
-	steam_appid=$(get_steam_appid)
+	if [ "$2" -gt 0 ]; then
+		steam_appid=$2
+		echo "${steam_appid}" > game_info/steam_appid.txt
+	else
+		steam_appid=$(get_steam_appid)
+	fi
 	gamedir="${scriptdir}/game_info/data"
 	if [ -n "${ADDITIONAL_PATH}" ]; then
 		gamedir="${gamedir}/${ADDITIONAL_PATH}"
