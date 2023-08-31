@@ -57,7 +57,7 @@ if [ "$1" == "--help" ] || [ "$1" == "-h" ]; then
 	exit
 fi
 
-export script="$(readlink -f "${BASH_SOURCE[0]}")"
+export script="$(realpath -s "${BASH_SOURCE[0]}")"
 export scriptdir="$(dirname "$script")"
 
 cd "${scriptdir}" || exit 1
@@ -704,7 +704,7 @@ if [ "$1" = "--steam" ]; then
 	if [ ! -f "${scriptdir}/libVDF.py" ]; then
 		wget -qO "${scriptdir}/libVDF.py" "https://raw.githubusercontent.com/alex2844/proton_launcher/master/libVDF.py"
 	fi
-	appid=$(python "${scriptdir}/libVDF.py" "${shortcuts_path}" "${GAME}" "${gamedir}/${EXE}" "${gamedir}" "${scriptdir}/game_info/icon.ico" "" "${script} %command%" 0 1 1 0 0 "" | awk -F': ' '{print $2}')
+	appid=$(python "${scriptdir}/libVDF.py" "${shortcuts_path}" "${GAME}" "${gamedir}/${EXE}" "${gamedir}" "${scriptdir}/game_info/icon.ico" "" "'${script}' %command%" 0 1 1 0 0 "" | awk -F': ' '{print $2}')
 	mkdir -p "${scriptdir}/temp_files"
 	echo "${appid}" > "${scriptdir}/temp_files/appid"
 	if [ -n "${steam_appid}" ]; then
