@@ -441,13 +441,6 @@ if [ ! -f "${WINE}" ] || [ "${USE_SYSTEM_WINE}" = 1 ]; then
 	USE_SYSTEM_WINE=1
 fi
 
-## Check if the Wine binary works at all
-
-if ! "${WINE}" --version &>/dev/null; then
-	echo "There is a problem running Wine binary!"
-	exit 1
-fi
-
 ## Disable ESYNC if ulimit fails to set the required limit
 
 if ! ulimit -n ${ULIMIT_SIZE} 2>/dev/null; then
@@ -710,15 +703,20 @@ if [ "$1" = "--steam" ]; then
 		wget -qO "${scriptdir}/libVDF.py" "https://raw.githubusercontent.com/alex2844/proton_launcher/master/libVDF.py"
 	fi
 	appid=$(python "${scriptdir}/libVDF.py" "${shortcuts_path}" "${GAME}" "${gamedir}/${EXE}" "${gamedir}" "${scriptdir}/game_info/icon.ico" "" "'${script}' %command%" 0 1 1 0 0 "" | awk -F': ' '{print $2}')
-	mkdir -p "${scriptdir}/temp_files"
-	echo "${appid}" > "${scriptdir}/temp_files/appid"
-	if [ -n "${steam_appid}" ]; then
-		download_image "${steam_appid}/header.jpg" "${grid_path}/${appid}.jpg"
-		download_image "${steam_appid}/library_600x900_2x.jpg" "${grid_path}/${appid}p.jpg"
-		download_image "${steam_appid}/library_hero.jpg" "${grid_path}/${appid}_hero.jpg"
-		download_image "${steam_appid}/logo.png" "${grid_path}/${appid}_logo.png"
+	if [ -n "${appid}" ]; then
+		mkdir -p "${scriptdir}/temp_files"
+		echo "${appid}" > "${scriptdir}/temp_files/appid"
+		if [ -n "${steam_appid}" ]; then
+			if [ ! -d "${grid_path}" ]; then
+				mkdir -p "${grid_path}"
+			fi
+			download_image "${steam_appid}/header.jpg" "${grid_path}/${appid}.jpg"
+			download_image "${steam_appid}/library_600x900_2x.jpg" "${grid_path}/${appid}p.jpg"
+			download_image "${steam_appid}/library_hero.jpg" "${grid_path}/${appid}_hero.jpg"
+			download_image "${steam_appid}/logo.png" "${grid_path}/${appid}_logo.png"
+		fi
+		echo 'Please restart steam client'
 	fi
-	echo 'Please restart steam client'
 	exit
 fi
 
@@ -756,6 +754,13 @@ EOF
 	fi
 
 	exit
+fi
+
+## Check if the Wine binary works at all
+
+if ! "${WINE}" --version &>/dev/null; then
+	echo "There is a problem running Wine binary!"
+	exit 1
 fi
 
 ## Exit if user have no write permissions on the current directory

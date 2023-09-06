@@ -126,6 +126,9 @@ def findLastEntryNumber(pathToShortcutsVDF)->int:
                     foundAppID=True
                     endPosition=i
                     #print("Pos: "+str(i))
+    if startPosition==0:
+        if endPosition==0:
+            return 0
     return int(fileContents[startPosition:endPosition])
 
 def decompressVDF(pathToShortcutsVDF):
