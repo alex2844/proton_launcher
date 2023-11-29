@@ -145,12 +145,11 @@ def listEntries(pathToShortcutsVDF:str,entryFilter:str=""):
 
 #def removeEntry(pathToShortcutsVDF,
 
-def addEntry(pathToShortcutsVDF, inputTuple)->str:
+def addEntry(appid, pathToShortcutsVDF, inputTuple):
     # if path.getsize(pathToShortcutsVDF) < 35:
     #     print("shortcuts.vdf appears to be empty. Need at least 1 shortcut to add more.")
     #     return
     # Entries are added before the last two characters of the file
-    appid = get_steam_shortcut_id(inputTuple[2],inputTuple[1])
     f = open(str(pathToShortcutsVDF), 'rb+')
     fileContents = f.read()
     f.seek(len(fileContents) - 2)
@@ -158,7 +157,6 @@ def addEntry(pathToShortcutsVDF, inputTuple)->str:
     f.seek(len(fileContents) - 2)
     f.write(createEntry(appid, inputTuple) + endFileContents)
     f.close()
-    return appid
 
 def createEntry(appid, inputTuple)->bytes:
     # Put together all the variables and delimiters
@@ -315,8 +313,8 @@ if __name__=="__main__":
     # fileExistenceCheck() # check if file exists. NOT IMPLEMENTED YET.
     lastEntryInfo = findLastEntryNumber(pathToShortcutsVDF)
     inputTuple = inputPreperation(sys.argv, lastEntryInfo)
-    # appid = get_steam_shortcut_id(inputTuple[2],inputTuple[1])
-    appid = addEntry(pathToShortcutsVDF, inputTuple)
+    appid = get_steam_shortcut_id(inputTuple[2],inputTuple[1])
+    addEntry(appid, pathToShortcutsVDF, inputTuple)
     print(f"AppId: {appid}")
 
 #def addFromDict(d:dict):

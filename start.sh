@@ -686,23 +686,31 @@ if [ "$1" = "--steam" ]; then
 		echo "shortcuts.vdf not found!"
 		exit 1
 	fi
-	if [[ "$2" -gt 0 ]]; then
+	if [ -n "$2" ]; then
 		steam_appid=$2
 		echo "${steam_appid}" > game_info/steam_appid.txt
-	else
+	fi
+	if [ -z "${steam_appid}" ]; then
 		steam_appid=$(get_steam_appid)
 	fi
+	icon="${scriptdir}/icon"
 	gamedir="${scriptdir}/game_info/data"
 	if [ -n "${ADDITIONAL_PATH}" ]; then
 		gamedir="${gamedir}/${ADDITIONAL_PATH}"
 	fi
-	if [ ! -f "${scriptdir}/game_info/icon.ico" ]; then
-		download_icon "${steam_appid}" "${GAME}"
+	if [ ! -f "${icon}" ]; then
+		icon="${scriptdir}/game_info/icon.ico"
+		if [ ! -f "${icon}" ]; then
+			download_icon "${steam_appid}" "${GAME}"
+		fi
+		if [ ! -f "${icon}" ]; then
+			icon=""
+		fi
 	fi
 	if [ ! -f "${scriptdir}/libVDF.py" ]; then
 		wget -qO "${scriptdir}/libVDF.py" "https://raw.githubusercontent.com/alex2844/proton_launcher/master/libVDF.py"
 	fi
-	appid=$(python "${scriptdir}/libVDF.py" "${shortcuts_path}" "${GAME}" "${gamedir}/${EXE}" "${gamedir}" "${scriptdir}/game_info/icon.ico" "" "'${script}' %command%" 0 1 1 0 0 "" | awk -F': ' '{print $2}')
+	appid=$(python "${scriptdir}/libVDF.py" "${shortcuts_path}" "${GAME}" "${gamedir}/${EXE}" "${gamedir}" "${icon}" "" "'${script}' %command%" 0 1 1 0 0 "" | awk -F': ' '{print $2}')
 	if [ -n "${appid}" ]; then
 		mkdir -p "${scriptdir}/temp_files"
 		echo "${appid}" > "${scriptdir}/temp_files/appid"
