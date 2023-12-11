@@ -669,6 +669,7 @@ if [ "$1" = "--clean" ]; then
 	if [ -n "${appid}" ]; then
 		rm -rf "$(get_steam_config_path)/grid/${appid}"*
 		rm -rf "$HOME/.local/share/Steam/steamapps/compatdata/${appid}"
+		rm -rf "$HOME/.local/share/Steam/steamapps/shadercache/${appid}"
 	fi
 	rm -rf cache
 	rm -rf "${WINEPREFIX}"
