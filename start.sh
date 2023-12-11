@@ -71,13 +71,38 @@ if [ "$1" == "--init" ]; then
 		steam_appid=$(echo "${content}" | head -n 1)
 		GAME=$(echo "${content}" | tail -n 1)
 		echo "${steam_appid}" > game_info/steam_appid.txt
+		echo "steam_appid: ${steam_appid}";
 	fi
 	if [ ! -f "game_info/game_info.txt" ]; then
-		EXE=$(find . -type f -name "*.exe" -print -quit)
+		EXE=$(find . -type f -name "*.exe" -print)
 		if [ -z "${EXE}" ]; then
 			EXE=$(find . -type f -name "*.sh" ! -path "./$(basename "$0")" -print)
 		fi
 		if [ -n "${EXE}" ]; then
+			if [ $(echo "$EXE" | wc -l) -gt 1 ]; then
+				echo "Found multiple files:"
+				IFS=$'\n' read -d '' -r -a EXE <<< "$EXE"
+				for index in "${!EXE[@]}"; do
+					echo "${index}: ${EXE[index]}"
+				done
+				read -p "Input file number for use (default 0): " index
+				EXE=${EXE[index]}
+				if [ -z "${EXE}" ]; then
+					echo "Error: selected invalid number file."
+					exit 1
+				fi
+			elif [[ "${EXE}" == *.exe ]]; then
+				if [ -n "$(strings "$EXE" | grep "#GOGCRCSTRING")" ]; then
+					if [ ! -d "innoextract-1.9-linux" ]; then
+						wget "https://github.com/dscharrer/innoextract/releases/download/1.9/innoextract-1.9-linux.tar.xz";
+						tar -xf innoextract-1.9-linux.tar.xz;
+					fi
+					./innoextract-1.9-linux/innoextract "${EXE}"
+					rm -rf innoextract-1.9-linux innoextract-1.9-linux.tar.xz $(basename "$EXE" .exe)*
+					"$script" --init
+					exit
+				fi
+			fi
 			if [ ! -d "game_info/data" ]; then
 				mkdir -p game_info/data
 				find . -mindepth 1 -maxdepth 1 -not -name "$(basename "${script}")" -not -name "game_info" -exec mv -t "game_info/data/" {} +
