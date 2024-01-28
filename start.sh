@@ -497,17 +497,13 @@ elif [ -f "${scriptdir}"/game_info/game_info.txt ]; then
 	GAME_INFO="$(cat "${scriptdir}"/game_info/game_info.txt)"
 fi
 
-if [ -z "${GAME_INFO}" ]; then
-	clear
-	echo "There is no game_info.txt file!"
-	exit 1
+if [ -n "${GAME_INFO}" ]; then
+	GAME="$(echo "${GAME_INFO}" | sed -n 6p)"
+	VERSION="$(echo "${GAME_INFO}" | sed -n 2p)"
+	ADDITIONAL_PATH="$(echo "${GAME_INFO}" | sed -n 5p)"
+	EXE="$(echo "${GAME_INFO}" | sed -n 3p)"
+	ARGS="$(echo "${GAME_INFO}" | sed -n 4p)"
 fi
-
-GAME="$(echo "${GAME_INFO}" | sed -n 6p)"
-VERSION="$(echo "${GAME_INFO}" | sed -n 2p)"
-ADDITIONAL_PATH="$(echo "${GAME_INFO}" | sed -n 5p)"
-EXE="$(echo "${GAME_INFO}" | sed -n 3p)"
-ARGS="$(echo "${GAME_INFO}" | sed -n 4p)"
 ARGV=("$@")
 
 if [[ "${ARGV[@]}" =~ ' -- ' ]]; then
@@ -529,7 +525,13 @@ if [[ "${ARGV[@]}" =~ ' -- ' ]]; then
 	fi
 fi
 
-if [ "${NTFS_MODE}" = 1 ]; then
+if [ -z "${EXE}" ]; then
+	clear
+	echo "There is no game_info.txt file!"
+	exit 1
+fi
+
+if [ -n "${GAME_INFO}" ] && [ "${NTFS_MODE}" = 1 ]; then
 	mkdir -p "${HOME}"/.local/share/games/"${GAME}"
 	export WINEPREFIX="${HOME}"/.local/share/games/"${GAME}"/prefix
 	export DOCUMENTS_DIR="${HOME}"/.local/share/games/"${GAME}"/documents
@@ -796,7 +798,28 @@ fi
 ## Check if the Wine binary works at all
 
 mkdir -p temp_files
-if [[ "${EXE}" == *.exe ]]; then
+
+if [ -n "${NoLauncherEXE}" ]; then
+	current_time=$(date +%s)
+	time_diff=180
+	if [ -f temp_files/lastrun ]; then
+		lastrun=$(cat temp_files/lastrun)
+		time_diff=$((current_time - lastrun))
+	fi
+	if [ ! "$time_diff" -lt 180 ]; then
+		if [[ "${NoLauncherEXE:0:1}" != "/" ]]; then
+			NoLauncherEXE="${STEAM_COMPAT_INSTALL_PATH}/${NoLauncherEXE}"
+		fi
+		EXE="${NoLauncherEXE}"
+	fi
+	echo "$current_time" > temp_files/lastrun
+fi
+
+if [ -n "${DisplaySteamAppId}" ] && [ -z "${GAMESCOPE_WAYLAND_DISPLAY}" ]; then
+	SteamAppId=0
+fi
+
+if [ -n "${GAME_INFO}" ] && [[ "${EXE}" == *.exe ]]; then
 
 	if ! "${WINE}" --version &>/dev/null; then
 		echo "There is a problem running Wine binary!"
@@ -1228,7 +1251,9 @@ for arg in "$@"; do
 done
 ## Launch the game
 
-cd "${scriptdir}"/game_info/data/"${ADDITIONAL_PATH}" || exit 1
+if [ -n "${GAME_INFO}" ]; then
+	cd "${scriptdir}/game_info/data/${ADDITIONAL_PATH}" || exit 1
+fi
 
 if [ -n "${STEAM_COMPAT_TOOL_PATHS}" ]; then
 	"${LAUNCH[@]}" "${EXE}" ${ARGS} "${ARGV[@]}"
