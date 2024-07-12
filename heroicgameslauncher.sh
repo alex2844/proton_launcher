@@ -7,7 +7,7 @@ mkdir -p "${path}"
 cd "${path}"
 
 function show_input_dialog() {
-	input=$(zenity --entry --title="Введите значение" --text="Введите имя аккаунта:")
+	input=$(zenity --entry --title="Account" --text="Input name account:")
     if [[ -n $input ]]; then
 		accounts+=("$input")
     fi
@@ -33,7 +33,7 @@ if [ -f "${path}/accounts.txt" ]; then
 else
 	show_input_dialog
 	while [[ -n ${input} ]]; do
-		if ! zenity --question --title="Добавить поле" --text="Хотите добавить еще один аккаунт?"; then
+		if ! zenity --question --title="Account" --text="Want to add another account?"; then
 			break
 		fi
 		show_input_dialog
@@ -57,6 +57,20 @@ if [ -n "$ACCOUNT" ]; then
 	echo "${ACCOUNT}" > "${path}/account.txt"
 	if [ -d "${path}/config_${ACCOUNT}" ]; then
 		mv "${path}/config_${ACCOUNT}" "${path}/config";
+	fi
+	if [ -n "${STEAM_BASE_FOLDER}" ]; then
+		compat_tools="${STEAM_BASE_FOLDER}/compatibilitytools.d";
+		for proton in "${path}/config/heroic/tools/proton/"*/; do
+			if [ -d "${proton}" ]; then
+				proton_version=$(basename "${proton}")
+				if [ ! -d "${compat_tools}/${proton_version}" ]; then
+					if zenity --question --title="Proton" --text="Add proton: ${proton_version} to steam?"; then
+						mkdir -p "${compat_tools}";
+						ln -s "${proton}" "${compat_tools}/${proton_version}";
+					fi
+				fi
+			fi
+		done
 	fi
 	flatpak run com.heroicgameslauncher.hgl "$@"
 fi
